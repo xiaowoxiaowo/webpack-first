@@ -1,0 +1,37 @@
+{
+  "name": "webpack-first",
+  "version": "1.0.0",
+  "description": "webpack学习",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "cross-env NODE_ENV=development webpack-dev-server",
+    "build": "cross-env NODE_ENV=production webpack"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xiaowoxiaowo/webpack-first.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/xiaowoxiaowo/webpack-first/issues"
+  },
+  "homepage": "https://github.com/xiaowoxiaowo/webpack-first#readme",
+  "devDependencies": {
+    "@babel/core": "^7.10.2",
+    "@babel/plugin-transform-runtime": "^7.10.1",
+    "@babel/preset-env": "^7.10.2",
+    "babel-loader": "^8.1.0",
+    "cross-env": "^7.0.2",
+    "html-webpack-plugin": "^4.3.0",
+    "webpack": "^4.43.0",
+    "webpack-cli": "^3.3.11",
+    "webpack-dev-server": "^3.11.0"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.10.2",
+    "@babel/runtime-corejs3": "^7.10.2"
+  }
+}

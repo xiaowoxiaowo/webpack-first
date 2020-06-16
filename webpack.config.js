@@ -7,8 +7,13 @@ const CopyWebpackPlugin = require('copy-webpack-plugin')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const OptimizeCssPlugin = require('optimize-css-assets-webpack-plugin')
 const webpack = require('webpack')
+const SpeedMeasurePlugin = require("speed-measure-webpack-plugin")
+const smp = new SpeedMeasurePlugin()
+const Happypack = require('happypack')
+const HardSourceWebpackPlugin = require('hard-source-webpack-plugin')
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
 
-module.exports = {
+const webpackConfig = {
   mode: isDev ? 'development' : 'production',
   devtool: isDev ? 'cheap-module-eval-source-map' : 'none', //开发环境下使用,定位到源码的行
   entry: {
@@ -22,6 +27,7 @@ module.exports = {
   },
   devServer: {
     //contentBase: path.resolve(__dirname, './src/html'),
+    open: true,
     hot: true,
     port: '3000', //默认是8080
     quiet: false, //默认不启用,是否不提示提示错误信息
@@ -35,23 +41,25 @@ module.exports = {
     rules: [
       {
         test: /\.jsx?$/,
-        use: ['babel-loader'],
+        //use: ['cache-loader','babel-loader'],
+        use: 'Happypack/loader?id=js',
         /*如果配置在这里
-        use: {
-          loader: 'babel-loader',
-          options: {
-            presets: ["@babel/preset-env"],
-            plugins: [
-              [
-                "@babel/plugin-transform-runtime",
-                {
-                  "corejs": 3
-                }
-              ]
-            ]
-          }
-        },*/
-        exclude: /node_modules/ //排除 node_modules 目录
+         use: {
+         loader: 'babel-loader',
+         options: {
+         presets: ["@babel/preset-env"],
+         plugins: [
+         [
+         "@babel/plugin-transform-runtime",
+         {
+         "corejs": 3
+         }
+         ]
+         ]
+         }
+         },*/
+        include: [path.resolve(__dirname, 'src')]
+        //exclude: /node_modules/ //排除 node_modules 目录
       },
       {
         test: /\.(le|c)ss$/,
@@ -64,16 +72,17 @@ module.exports = {
               reloadAll: true
             }
           }, 'css-loader', {
-          loader: 'postcss-loader',
-          options: {
-            plugins: function () {
-              return [
-                require('autoprefixer')()
-              ]
+            loader: 'postcss-loader',
+            options: {
+              plugins: function () {
+                return [
+                  require('autoprefixer')()
+                ]
+              }
             }
-          }
-        }, 'less-loader'],
-        exclude: /node_modules/
+          }, 'less-loader'],
+        //exclude: /node_modules/
+        include: [path.resolve(__dirname, 'src')]
       },
       {
         test: /\.(png|jpg|gif|jpeg|webp|svg|eot|ttf|woff|woff2)$/,
@@ -88,12 +97,23 @@ module.exports = {
             }
           }
         ],
-        exclude: /node_modules/
+        //exclude: /node_modules/
+        include: [path.resolve(__dirname, 'src')]
       }
     ]
   },
   plugins: [
     //数组 放着所有的webpack插件
+    new Happypack({
+      id: 'js', //和rule中的id=js对应
+      //将之前 rule 中的 loader 在此配置
+      use: ['cache-loader','babel-loader'] //必须是数组
+    }),
+    /*new Happypack({
+      id: 'css', //和rule中的id=js对应
+      //将之前 rule 中的 loader 在此配置
+      use: ['cache-loader',MiniCssExtractPlugin.loader, 'css-loader', 'postcss-loader', 'less-loader']
+    }),*/
     new HtmlWebpackPlugin({
       template: './public/index.html',
       filename: 'index.html', //打包后的文件名
@@ -124,8 +144,8 @@ module.exports = {
           to: path.resolve(__dirname, 'dist', 'static'),
           flatten: false
           /*globOptions: {
-            ignore: ['.*']
-          }*/
+           ignore: ['.*']
+           }*/
         }
       ]
     }),
@@ -137,5 +157,35 @@ module.exports = {
     new OptimizeCssPlugin(),    //压缩css文件, 如果配置在 optimization，那么还需要再配置一下 js 的压缩
     //new webpack.NamedModulesPlugin(),
     //new webpack.HotModuleReplacementPlugin()
-  ]
+    //new HardSourceWebpackPlugin(),
+    //new BundleAnalyzerPlugin()
+  ],
+  optimization: {
+    runtimeChunk: {
+      name: 'manifest'
+    },
+    splitChunks: {//分割代码块
+      cacheGroups: {
+        vendor: {
+          //第三方依赖
+          priority: 1, //设置优先级，首先抽离第三方模块
+          name: 'vendor',
+          test: /node_modules/,
+          chunks: 'initial',
+          minSize: 0,
+          minChunks: 1 //最少引入了1次
+        },
+        //缓存组(一般没有这个吧)
+        common: {
+          //公共模块
+          chunks: 'initial',
+          name: 'common',
+          minSize: 100, //大小超过100个字节
+          minChunks: 3 //最少引入了3次
+        }
+      }
+    }
+  }
 }
+
+module.exports = smp.wrap(webpackConfig)

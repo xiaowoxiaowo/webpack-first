@@ -1,3 +1,4 @@
+const ENV = process.env.NODE_ENV
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const isDev = process.env.NODE_ENV === 'development'
 const config = require('./public/config')[isDev ? 'dev' : 'build']
@@ -33,12 +34,26 @@ const webpackConfig = {
     quiet: false, //默认不启用,是否不提示提示错误信息
     inline: true, //默认开启 inline 模式，如果设置为false,开启 iframe 模式
     stats: "errors-only", //终端仅打印 error
-    overlay: false, //默认不启用, 是否全屏输出错误
+    overlay: true, //默认不启用, 是否全屏输出错误
     clientLogLevel: "silent", //日志等级
     compress: true, //是否启用 gzip 压缩
   },
   module: {
     rules: [
+      {
+        test: /\.js$/,
+        use: [
+          {
+            loader: 'eslint-loader',
+            options: {
+              formatter: require('eslint-friendly-formatter')
+            }
+          }
+        ],
+        enforce: "pre", // 编译前检查
+        exclude: /node_modules/, // 不检测的文件
+        include: [path.resolve(__dirname, 'src')], // 指定检查的目录
+      },
       {
         test: /\.jsx?$/,
         //use: ['cache-loader','babel-loader'],
@@ -149,6 +164,9 @@ const webpackConfig = {
         }
       ]
     }),
+    new webpack.DefinePlugin({
+      'process.env.NODE_ENV': JSON.stringify(ENV)
+    })
     new MiniCssExtractPlugin({
       filename: 'css/[name]_[hash:6].css'
       //个人习惯将css文件放在单独目录下
